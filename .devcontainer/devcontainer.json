@@ -1,0 +1,12 @@
+{
+  "name": "filmbuddy",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:24",
+  "forwardPorts": [5173],
+  "portsAttributes": {
+    "5173": {
+      "label": "Vite Dev Server",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postCreateCommand": "npm install"
+}

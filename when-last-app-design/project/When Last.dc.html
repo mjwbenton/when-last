@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @font-face { font-family: 'Inter'; src: local('Inter'); }
+    body { margin: 0; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  </style>
+</helmet>
+<div style="max-width: 480px; margin: 0 auto; min-height: 100vh; background: oklch(98% 0.004 95); font-family: -apple-system, 'Inter', system-ui, sans-serif; color: oklch(22% 0.01 95); position: relative;">
+
+  <sc-if value="{{ isGridView }}" hint-placeholder-val="{{ true }}">
+    <div style="padding: 24px 20px 100px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 24px;">
+        <h1 style="font-size: 28px; font-weight: 700; margin: 0; letter-spacing: -0.02em;">When Last?</h1>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <sc-for list="{{ tiles }}" as="tile" hint-placeholder-count="4">
+          <div onClick="{{ tile.onOpen }}" style="background: #fff; border: 1px solid oklch(91% 0.005 95); border-radius: 18px; padding: 18px 16px; cursor: pointer; min-height: 108px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 2px oklch(0% 0 0 / 0.03);" style-hover="border-color: oklch(80% 0.01 95);">
+            <div style="font-size: 16px; font-weight: 600; line-height: 1.25;">{{ tile.name }}</div>
+            <div style="font-size: 13px; color: {{ tile.timeColor }}; font-weight: 500;">{{ tile.lastText }}</div>
+          </div>
+        </sc-for>
+
+        <div onClick="{{ openAdd }}" style="border: 1.5px dashed oklch(85% 0.01 95); border-radius: 18px; min-height: 108px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: oklch(60% 0.02 95);" style-hover="border-color: {{ accentColor }}; color: {{ accentColor }};">
+          <span style="font-size: 32px; font-weight: 300; line-height: 1;">+</span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isDetailView }}" hint-placeholder-val="{{ false }}">
+    <div style="padding: 20px; animation: fadeIn 0.15s ease;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+        <button onClick="{{ goBack }}" style="background: none; border: none; font-size: 22px; padding: 4px 8px 4px 0; cursor: pointer; color: oklch(22% 0.01 95);">←</button>
+        <h2 style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -0.01em;">{{ selectedAction.name }}</h2>
+      </div>
+
+      <button onClick="{{ logNow }}" style="width: 100%; background: {{ accentColor }}; color: #fff; border: none; border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 10px;" style-hover="opacity: 0.92;">
+        Log — done now
+      </button>
+
+      <sc-if value="{{ showCustomTime }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+          <input type="datetime-local" value="{{ customDateTime }}" onChange="{{ setCustomDateTime }}" style="flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid oklch(88% 0.005 95); font-size: 14px; font-family: inherit;" />
+          <button onClick="{{ confirmCustomLog }}" style="background: {{ accentColor }}; color: #fff; border: none; border-radius: 10px; padding: 0 16px; font-size: 14px; font-weight: 600; cursor: pointer;">Save</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ showCustomTimeToggle }}" hint-placeholder-val="{{ true }}">
+        <div onClick="{{ toggleCustomTime }}" style="text-align: center; font-size: 13px; color: oklch(55% 0.02 95); margin-bottom: 22px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;">
+          {{ customTimeToggleLabel }}
+        </div>
+      </sc-if>
+
+      <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: oklch(55% 0.02 95); margin: 8px 0 10px;">History</div>
+
+      <sc-if value="{{ hasHistory }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; flex-direction: column; gap: 1px; background: oklch(91% 0.005 95); border-radius: 14px; overflow: hidden; border: 1px solid oklch(91% 0.005 95);">
+          <sc-for list="{{ historyRows }}" as="row" hint-placeholder-count="3">
+            <div onClick="{{ row.onToggle }}" style="background: #fff; padding: 14px 16px; cursor: pointer; font-size: 14px; display: flex; justify-content: space-between; align-items: center;">
+              <span>{{ row.displayText }}</span>
+              <span style="color: oklch(65% 0.02 95); font-size: 12px;">{{ row.hint }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ hasNoHistory }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align: center; color: oklch(60% 0.02 95); font-size: 14px; padding: 20px 0;">No entries yet.</div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showAddModal }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeAdd }}" style="position: absolute; inset: 0; background: oklch(20% 0 0 / 0.35); display: flex; align-items: flex-end; animation: fadeIn 0.15s ease;">
+      <div onClick="{{ stopClickPropagation }}" style="background: #fff; width: 100%; border-radius: 24px 24px 0 0; padding: 24px 20px 28px; animation: slideUp 0.2s ease;">
+        <div style="font-size: 17px; font-weight: 700; margin-bottom: 14px;">New action</div>
+        <input type="text" placeholder="e.g. Watered plants" value="{{ newName }}" onChange="{{ setNewName }}" autoFocus="{{ true }}" style="width: 100%; box-sizing: border-box; padding: 14px; border-radius: 12px; border: 1px solid oklch(88% 0.005 95); font-size: 15px; font-family: inherit; margin-bottom: 14px;" />
+        <div style="display: flex; gap: 10px;">
+          <button onClick="{{ closeAdd }}" style="flex: 1; background: oklch(95% 0.004 95); border: none; border-radius: 12px; padding: 13px; font-size: 15px; font-weight: 600; cursor: pointer; color: oklch(30% 0.01 95);">Cancel</button>
+          <button onClick="{{ createAction }}" style="flex: 1; background: {{ accentColor }}; color: #fff; border: none; border-radius: 12px; padding: 13px; font-size: 15px; font-weight: 600; cursor: pointer;">Create</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 390, &quot;height&quot;: 844}, &quot;accentColor&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#2f7d6b&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;use24HourClock&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;}}">
+const STORAGE_KEY = 'whenlast_actions_v1';
+
+function seedData() {
+  const now = Date.now();
+  const day = 86400000;
+  return [
+    { id: 'a1', name: 'Watered plants', logs: [now - 2 * day, now - 9 * day, now - 16 * day] },
+    { id: 'a2', name: 'Changed bedsheets', logs: [now - 5 * day] },
+    { id: 'a3', name: 'Oil change', logs: [now - 70 * day, now - 160 * day] },
+    { id: 'a4', name: 'Cleaned fridge', logs: [] },
+  ];
+}
+
+function relativeTime(ts, use24h) {
+  if (ts == null) return 'Never';
+  const diff = Date.now() - ts;
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return 'Just now';
+  if (min < 60) return min + (min === 1 ? ' min ago' : ' mins ago');
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return hr + (hr === 1 ? ' hr ago' : ' hrs ago');
+  const d = Math.floor(hr / 24);
+  if (d < 7) return d + (d === 1 ? ' day ago' : ' days ago');
+  const w = Math.floor(d / 7);
+  if (w < 5) return w + (w === 1 ? ' week ago' : ' weeks ago');
+  const mo = Math.floor(d / 30);
+  if (mo < 12) return mo + (mo === 1 ? ' month ago' : ' months ago');
+  const y = Math.floor(d / 365);
+  return y + (y === 1 ? ' year ago' : ' years ago');
+}
+
+function exactTime(ts, use24h) {
+  const d = new Date(ts);
+  const dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const timeStr = d.toLocaleTimeString(undefined, use24h ? { hour: '2-digit', minute: '2-digit', hour12: false } : { hour: 'numeric', minute: '2-digit' });
+  return dateStr + ', ' + timeStr;
+}
+
+function toLocalInputValue(ts) {
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+class Component extends DCLogic {
+  state = {
+    view: 'grid',
+    selectedId: null,
+    actions: [],
+    showAddModal: false,
+    newName: '',
+    showCustomTime: false,
+    customDateTime: '',
+    expandedRows: {},
+  };
+
+  componentDidMount() {
+    let actions;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      actions = raw ? JSON.parse(raw) : null;
+    } catch (e) { actions = null; }
+    if (!actions) actions = seedData();
+    this.setState({ actions });
+  }
+
+  persist(actions) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(actions)); } catch (e) {}
+  }
+
+  openAction(id) {
+    this.setState({ view: 'detail', selectedId: id, showCustomTime: false, expandedRows: {} });
+  }
+
+  goBack() {
+    this.setState({ view: 'grid', selectedId: null });
+  }
+
+  openAdd() {
+    this.setState({ showAddModal: true, newName: '' });
+  }
+
+  closeAdd() {
+    this.setState({ showAddModal: false });
+  }
+
+  setNewName(e) {
+    this.setState({ newName: e.target.value });
+  }
+
+  createAction() {
+    const name = this.state.newName.trim();
+    if (!name) return;
+    const action = { id: 'a' + Date.now(), name, logs: [] };
+    const actions = [...this.state.actions, action];
+    this.persist(actions);
+    this.setState({ actions, showAddModal: false, newName: '' });
+  }
+
+  logNow() {
+    const { actions, selectedId } = this.state;
+    const updated = actions.map(a => a.id === selectedId ? { ...a, logs: [Date.now(), ...a.logs] } : a);
+    this.persist(updated);
+    this.setState({ actions: updated, showCustomTime: false });
+  }
+
+  toggleCustomTime() {
+    this.setState(s => ({ showCustomTime: !s.showCustomTime, customDateTime: toLocalInputValue(Date.now()) }));
+  }
+
+  setCustomDateTime(e) {
+    this.setState({ customDateTime: e.target.value });
+  }
+
+  confirmCustomLog() {
+    const { actions, selectedId, customDateTime } = this.state;
+    if (!customDateTime) return;
+    const ts = new Date(customDateTime).getTime();
+    if (isNaN(ts)) return;
+    const updated = actions.map(a => a.id === selectedId ? { ...a, logs: [...a.logs, ts].sort((x, y) => y - x) } : a);
+    this.persist(updated);
+    this.setState({ actions: updated, showCustomTime: false });
+  }
+
+  toggleRow(idx) {
+    this.setState(s => ({ expandedRows: { ...s.expandedRows, [idx]: !s.expandedRows[idx] } }));
+  }
+
+  stopClickPropagation(e) {
+    e.stopPropagation();
+  }
+
+  renderVals() {
+    const accentColor = this.props.accentColor ?? '#2f7d6b';
+    const use24h = !!this.props.use24HourClock;
+    const { view, actions, selectedId, showAddModal, newName, showCustomTime, customDateTime, expandedRows } = this.state;
+
+    const sorted = [...actions].sort((a, b) => {
+      const la = a.logs.length ? Math.max(...a.logs) : -1;
+      const lb = b.logs.length ? Math.max(...b.logs) : -1;
+      return lb - la;
+    });
+
+    const tiles = sorted.map(a => {
+      const last = a.logs.length ? Math.max(...a.logs) : null;
+      return {
+        id: a.id,
+        name: a.name,
+        lastText: last == null ? 'Never logged' : relativeTime(last, use24h),
+        timeColor: last == null ? 'oklch(70% 0.02 95)' : accentColor,
+        onOpen: () => this.openAction(a.id),
+      };
+    });
+
+    const selectedAction = actions.find(a => a.id === selectedId) || { name: '', logs: [] };
+    const sortedLogs = [...selectedAction.logs].sort((x, y) => y - x);
+    const historyRows = sortedLogs.map((ts, idx) => ({
+      displayText: expandedRows[idx] ? exactTime(ts, use24h) : relativeTime(ts, use24h),
+      hint: expandedRows[idx] ? relativeTime(ts, use24h) : exactTime(ts, use24h),
+      onToggle: () => this.toggleRow(idx),
+    }));
+
+    return {
+      accentColor,
+      isGridView: view === 'grid',
+      isDetailView: view === 'detail',
+      tiles,
+      selectedAction,
+      goBack: () => this.goBack(),
+      openAdd: () => this.openAdd(),
+      closeAdd: () => this.closeAdd(),
+      newName,
+      setNewName: e => this.setNewName(e),
+      createAction: () => this.createAction(),
+      showAddModal,
+      logNow: () => this.logNow(),
+      showCustomTime,
+      showCustomTimeToggle: true,
+      customTimeToggleLabel: showCustomTime ? 'Cancel custom time' : 'Log a different time…',
+      toggleCustomTime: () => this.toggleCustomTime(),
+      customDateTime,
+      setCustomDateTime: e => this.setCustomDateTime(e),
+      confirmCustomLog: () => this.confirmCustomLog(),
+      hasHistory: historyRows.length > 0,
+      hasNoHistory: historyRows.length === 0,
+      historyRows,
+      stopClickPropagation: e => this.stopClickPropagation(e),
+    };
+  }
+}
+</script>
+</body>
+</html>

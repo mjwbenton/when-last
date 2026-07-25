@@ -1,5 +1,5 @@
 {
-  "name": "filmbuddy",
+  "name": "when-last",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:24",
   "forwardPorts": [5173],
   "portsAttributes": {

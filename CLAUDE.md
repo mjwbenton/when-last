@@ -46,7 +46,7 @@ There is no router. `packages/app/src/nav/context.tsx` holds a discriminated-uni
 
 ### Backup flow
 
-Two-leg flow designed so the SPA never holds long-lived AWS credentials: 
+Two-leg flow designed so the SPA never holds long-lived AWS credentials:
 
 1. SPA calls the Lambda Function URL (`VITE_BACKUP_API`, injected at build time in CI) with `{ key, action: 'put' | 'get' }`. `key` is the per-device value in `AppState.backupKey`, format `wl-xxxx-xxxx-xxxx` (enforced by `KEY_PATTERN` in `handler.ts` / `BACKUP_KEY_PATTERN` in `state/id.ts`).
 2. Lambda `AssumeRole`s into a federation role with a **session policy** scoped to exactly `s3://<bucket>/<key>/state.json`, and returns the short-lived STS credentials to the browser. The SPA then uses `@aws-sdk/client-s3` directly to PUT or GET the snapshot. See `packages/app/src/backup/client.ts` and `packages/infra/lambda/handler.ts`.

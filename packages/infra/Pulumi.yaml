@@ -1,0 +1,5 @@
+name: whenlast
+runtime: nodejs
+description: When Last infrastructure — static site, DNS, backup API.
+backend:
+  url: s3://whenlast.mattb.tech-infra-state

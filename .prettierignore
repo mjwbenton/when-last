@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+coverage
+.pulumi
+packages/app/public/icons
+design
+package-lock.json
+*.min.js
+*.min.css
+filmbuddy-for-reference
+when-last-app-design

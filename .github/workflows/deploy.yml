@@ -1,0 +1,107 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.node-version'
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build:pwa-assets
+        working-directory: packages/app
+
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.node-version'
+          cache: npm
+      - run: npm ci
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::858777967843:role/github-actions-admin
+          aws-region: us-east-1
+          role-session-name: whenlast-gha
+
+      - name: Build Lambda bundle
+        working-directory: packages/infra
+        run: npm run build:lambda
+
+      - uses: pulumi/actions@v6
+        with:
+          command: up
+          stack-name: prod
+          work-dir: packages/infra
+          pulumi-version: latest
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+
+      - name: Capture Pulumi outputs
+        id: outputs
+        working-directory: packages/infra
+        run: |
+          {
+            echo "siteBucket=$(pulumi stack output siteBucketName --stack prod)"
+            echo "distributionId=$(pulumi stack output cloudfrontDistributionId --stack prod)"
+            echo "backupApiUrl=$(pulumi stack output backupApiUrl --stack prod)"
+          } >> "$GITHUB_OUTPUT"
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+
+      - name: Regenerate PWA assets
+        working-directory: packages/app
+        run: npm run build:pwa-assets
+
+      - name: Build SPA with backup API URL injected
+        working-directory: packages/app
+        env:
+          VITE_BACKUP_API: ${{ steps.outputs.outputs.backupApiUrl }}
+        run: npm run build
+
+      - name: Assume deploy-account admin for S3/CloudFront
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::027053845179:role/admin
+          role-chaining: true
+          role-skip-session-tagging: true
+          aws-region: us-east-1
+          role-session-name: whenlast-gha-deploy
+
+      - name: Sync to S3
+        run: |
+          aws s3 sync packages/app/dist "s3://${{ steps.outputs.outputs.siteBucket }}" \
+            --delete \
+            --cache-control "public, max-age=300"
+          # Never cache the HTML entrypoint or the SW registration shim.
+          aws s3 cp "s3://${{ steps.outputs.outputs.siteBucket }}/index.html" \
+                    "s3://${{ steps.outputs.outputs.siteBucket }}/index.html" \
+                    --cache-control "no-cache" --metadata-directive REPLACE --content-type text/html
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ steps.outputs.outputs.distributionId }}" \
+            --paths "/*"

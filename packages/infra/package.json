@@ -1,0 +1,25 @@
+{
+  "name": "@when-last/infra",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build:lambda": "node scripts/build-lambda.mjs",
+    "build": "npm run build:lambda",
+    "preview": "npm run build:lambda && pulumi preview",
+    "up": "npm run build:lambda && pulumi up --yes"
+  },
+  "dependencies": {
+    "@pulumi/aws": "^7.27.0",
+    "@pulumi/pulumi": "^3.232.0"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-sts": "^3.1037.0",
+    "@types/aws-lambda": "^8.10.147",
+    "@types/node": "^25.6.0",
+    "esbuild": "^0.28.0",
+    "typescript": "^6.0.3"
+  }
+}

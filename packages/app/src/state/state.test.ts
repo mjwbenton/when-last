@@ -13,7 +13,7 @@ import {
   lastLoggedAt,
   sortedActions,
 } from './index';
-import { addAction, logNow, logAt, markBackedUp, restoreFromSnapshot } from './mutators';
+import { addAction, logNow, logAt, removeLog, markBackedUp, restoreFromSnapshot } from './mutators';
 import type { AppState } from './types';
 
 function fresh(): AppState {
@@ -93,6 +93,45 @@ describe('action mutators', () => {
     s = logNow(s, idA);
     expect(s.actions[0]?.logs).toHaveLength(1);
     expect(s.actions[1]?.logs).toHaveLength(0);
+  });
+
+  it('removeLog removes the matching entry, keeping the rest', () => {
+    let s = addAction(fresh(), { name: 'Oil change' });
+    const id = s.actions[0]!.id;
+    s = logAt(s, id, 1000);
+    s = logAt(s, id, 3000);
+    s = logAt(s, id, 2000);
+    s = removeLog(s, id, 2000);
+    expect(s.actions[0]?.logs).toEqual([3000, 1000]);
+  });
+
+  it('removeLog removes only the first matching duplicate timestamp', () => {
+    let s = addAction(fresh(), { name: 'Oil change' });
+    const id = s.actions[0]!.id;
+    s = logAt(s, id, 1000);
+    s = logAt(s, id, 1000);
+    s = removeLog(s, id, 1000);
+    expect(s.actions[0]?.logs).toEqual([1000]);
+  });
+
+  it('removeLog is a no-op when the timestamp is not found', () => {
+    let s = addAction(fresh(), { name: 'Oil change' });
+    const id = s.actions[0]!.id;
+    s = logAt(s, id, 1000);
+    s = removeLog(s, id, 9999);
+    expect(s.actions[0]?.logs).toEqual([1000]);
+  });
+
+  it('removeLog only touches the targeted action', () => {
+    let s = addAction(fresh(), { name: 'A' });
+    s = addAction(s, { name: 'B' });
+    const idA = s.actions[0]!.id;
+    const idB = s.actions[1]!.id;
+    s = logAt(s, idA, 1000);
+    s = logAt(s, idB, 1000);
+    s = removeLog(s, idA, 1000);
+    expect(s.actions[0]?.logs).toEqual([]);
+    expect(s.actions[1]?.logs).toEqual([1000]);
   });
 
   it('markBackedUp sets lastBackupAt', () => {

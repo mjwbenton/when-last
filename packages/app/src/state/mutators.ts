@@ -27,6 +27,20 @@ export function logAt(state: AppState, actionId: string, timestamp: number): App
   };
 }
 
+export function removeLog(state: AppState, actionId: string, timestamp: number): AppState {
+  return {
+    ...state,
+    actions: state.actions.map((a) => {
+      if (a.id !== actionId) return a;
+      const idx = a.logs.indexOf(timestamp);
+      if (idx === -1) return a;
+      const logs = [...a.logs];
+      logs.splice(idx, 1);
+      return { ...a, logs };
+    }),
+  };
+}
+
 export function markBackedUp(state: AppState, at: number = Date.now()): AppState {
   return { ...state, lastBackupAt: at };
 }

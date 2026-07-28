@@ -16,6 +16,7 @@ type Mutators = {
   addAction: (args: Parameters<typeof M.addAction>[1]) => void;
   logNow: (actionId: string) => void;
   logAt: (actionId: string, timestamp: number) => void;
+  removeLog: (actionId: string, timestamp: number) => void;
   markBackedUp: (at?: number) => void;
   restoreFromSnapshot: (snapshot: AppState) => void;
 };
@@ -44,6 +45,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       addAction: apply(M.addAction),
       logNow: (actionId) => setState((prev) => M.logNow(prev, actionId)),
       logAt: (actionId, timestamp) => setState((prev) => M.logAt(prev, actionId, timestamp)),
+      removeLog: (actionId, timestamp) =>
+        setState((prev) => M.removeLog(prev, actionId, timestamp)),
       markBackedUp: (at) => setState((prev) => M.markBackedUp(prev, at)),
       restoreFromSnapshot: apply(M.restoreFromSnapshot),
     }),

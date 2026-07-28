@@ -284,6 +284,8 @@ body {
 }
 
 .history-row {
+  position: relative;
+  width: 100%;
   appearance: none;
   font: inherit;
   text-align: left;
@@ -297,6 +299,27 @@ body {
   align-items: center;
   gap: 10px;
   border: 0;
+}
+
+.history-row-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.history-row-delete.icon-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 76px;
+  border-radius: 0;
+  background: var(--danger);
+  color: #fff;
+}
+
+.history-row-delete.icon-btn:hover {
+  background: var(--danger);
+  color: #fff;
 }
 
 .history-hint {

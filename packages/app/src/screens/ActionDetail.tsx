@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useAppState, relativeTime, exactTime, toLocalInputValue } from '../state';
+import { useAppState, toLocalInputValue } from '../state';
 import { useNav } from '../nav/context';
+import { HistoryRow } from '../components/HistoryRow';
 
 type Props = { actionId: string };
 
@@ -82,22 +83,15 @@ export function ActionDetail({ actionId }: Props) {
 
       {logs.length > 0 ? (
         <div className="history-list">
-          {logs.map((ts, idx) => {
-            const isExpanded = expanded[idx] ?? false;
-            return (
-              <button
-                key={idx}
-                type="button"
-                className="history-row"
-                onClick={() => setExpanded((prev) => ({ ...prev, [idx]: !prev[idx] }))}
-              >
-                <span>{isExpanded ? exactTime(ts) : relativeTime(ts)}</span>
-                <span className="history-hint">
-                  {isExpanded ? relativeTime(ts) : exactTime(ts)}
-                </span>
-              </button>
-            );
-          })}
+          {logs.map((ts) => (
+            <HistoryRow
+              key={ts}
+              timestamp={ts}
+              expanded={expanded[ts] ?? false}
+              onToggleExpanded={() => setExpanded((prev) => ({ ...prev, [ts]: !prev[ts] }))}
+              onDelete={() => mutators.removeLog(action.id, ts)}
+            />
+          ))}
         </div>
       ) : (
         <div className="history-empty">No entries yet.</div>

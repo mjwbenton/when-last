@@ -1,6 +1,6 @@
 import type { SVGProps } from 'react';
 
-export type IconName = 'plus' | 'check' | 'upload' | 'download' | 'alert' | 'copy';
+export type IconName = 'plus' | 'check' | 'upload' | 'download' | 'alert' | 'copy' | 'trash';
 
 type IconProps = Omit<SVGProps<SVGSVGElement>, 'name' | 'stroke' | 'strokeWidth'> & {
   name: IconName;
@@ -58,6 +58,12 @@ export function Icon({ name, size = 20, stroke = 1.75, ...rest }: IconProps) {
         <svg {...common}>
           <rect x="8" y="8" width="12" height="12" rx="2" />
           <path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" />
+        </svg>
+      );
+    case 'trash':
+      return (
+        <svg {...common}>
+          <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m3 0-1 13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 7h14ZM10 11v6M14 11v6" />
         </svg>
       );
   }

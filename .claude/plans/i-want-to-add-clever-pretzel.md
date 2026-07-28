@@ -29,9 +29,11 @@ export function removeLog(state: AppState, actionId: string, timestamp: number):
   };
 }
 ```
+
 Uses `indexOf` + `splice` (removes the first match only) rather than `.filter`, so if two custom entries ever land on the exact same timestamp, deleting one doesn't wipe both.
 
 **`packages/app/src/state/store.tsx`** — add `removeLog` to the `Mutators` type and the `mutators` object, same shape as `logAt`:
+
 ```ts
 removeLog: (actionId: string, timestamp: number) => void;
 ...
@@ -62,6 +64,7 @@ type HistoryRowProps = {
 ```
 
 Internal gesture state, using `useDrag` from `@use-gesture/react`:
+
 - `offset` (number, 0 = closed, `OPEN_OFFSET = -76` = fully revealed) drives `transform: translateX(${offset}px)` on the row's button content; `transition: transform 200ms ease` when not actively dragging (i.e. not `active` from `useDrag`), none while dragging.
 - A wrapper `<div className="history-row-wrap">` with `position: relative; overflow: hidden` contains the row button and an absolutely-positioned delete `<button>` (using `IconButton` with `name="trash"`, styled with `var(--danger)`) sitting behind it on the right, width matching `76px`.
 - Bind the gesture to the row button:
@@ -92,17 +95,21 @@ Internal gesture state, using `useDrag` from `@use-gesture/react`:
 ## Wire into `ActionDetail.tsx`
 
 Replace the inline `logs.map((ts, idx) => ...)` block (lines 85-100) with:
+
 ```tsx
-{logs.map((ts) => (
-  <HistoryRow
-    key={ts}
-    timestamp={ts}
-    expanded={expanded[ts] ?? false}
-    onToggleExpanded={() => setExpanded((prev) => ({ ...prev, [ts]: !prev[ts] }))}
-    onDelete={() => mutators.removeLog(action.id, ts)}
-  />
-))}
+{
+  logs.map((ts) => (
+    <HistoryRow
+      key={ts}
+      timestamp={ts}
+      expanded={expanded[ts] ?? false}
+      onToggleExpanded={() => setExpanded((prev) => ({ ...prev, [ts]: !prev[ts] }))}
+      onDelete={() => mutators.removeLog(action.id, ts)}
+    />
+  ));
+}
 ```
+
 `expanded` state type changes from `Record<number, boolean>` keyed by index to keyed by timestamp (same type signature, different semantics — no type change needed, just the key values used).
 
 ## CSS

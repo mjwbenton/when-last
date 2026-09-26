@@ -95,10 +95,14 @@ jobs:
           aws s3 sync packages/app/dist "s3://${{ steps.outputs.outputs.siteBucket }}" \
             --delete \
             --cache-control "public, max-age=300"
-          # Never cache the HTML entrypoint or the SW registration shim.
+          # Never cache the HTML entrypoint or the service worker, so browsers
+          # always see a new deploy on their next update check.
           aws s3 cp "s3://${{ steps.outputs.outputs.siteBucket }}/index.html" \
                     "s3://${{ steps.outputs.outputs.siteBucket }}/index.html" \
                     --cache-control "no-cache" --metadata-directive REPLACE --content-type text/html
+          aws s3 cp "s3://${{ steps.outputs.outputs.siteBucket }}/sw.js" \
+                    "s3://${{ steps.outputs.outputs.siteBucket }}/sw.js" \
+                    --cache-control "no-cache" --metadata-directive REPLACE --content-type application/javascript
 
       - name: Invalidate CloudFront
         run: |

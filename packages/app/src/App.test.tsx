@@ -74,4 +74,17 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.getByText('Car')).toBeInTheDocument();
   });
+
+  it('lets you pick a colour when creating a category', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Categories' }));
+    await user.type(screen.getByLabelText('New category name'), 'Home');
+    await user.click(screen.getByRole('button', { name: 'Violet' }));
+    await user.click(screen.getByRole('button', { name: 'Add' }));
+
+    const dot = await screen.findByRole('button', { name: 'Colour for Home' });
+    expect(dot).toHaveStyle({ backgroundColor: 'rgb(122, 69, 168)' });
+  });
 });

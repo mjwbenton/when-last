@@ -1,5 +1,6 @@
 import type { AppState, Category, TrackedAction } from './types';
 import { uid } from './id';
+import { nextCategoryColor } from './categoryColors';
 
 export function addAction(
   state: AppState,
@@ -25,12 +26,26 @@ export function setActionCategory(
   };
 }
 
-export function addCategory(state: AppState, args: { name: string; id?: string }): AppState {
+export function addCategory(
+  state: AppState,
+  args: { name: string; id?: string; color?: string },
+): AppState {
   const name = args.name.trim();
   if (!name) return state;
   if (state.categories.some((c) => c.name.toLowerCase() === name.toLowerCase())) return state;
-  const category: Category = { id: args.id ?? uid('cat'), name };
+  const category: Category = {
+    id: args.id ?? uid('cat'),
+    name,
+    color: args.color ?? nextCategoryColor(state.categories.map((c) => c.color)),
+  };
   return { ...state, categories: [...state.categories, category] };
+}
+
+export function setCategoryColor(state: AppState, categoryId: string, color: string): AppState {
+  return {
+    ...state,
+    categories: state.categories.map((c) => (c.id === categoryId ? { ...c, color } : c)),
+  };
 }
 
 export function renameCategory(state: AppState, categoryId: string, name: string): AppState {

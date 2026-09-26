@@ -18,16 +18,25 @@ export function CategoryPicker({ categories, value, onChange, onCreate }: Props)
       >
         None
       </button>
-      {categories.map((c) => (
-        <button
-          key={c.id}
-          type="button"
-          className={['chip', value === c.id && 'active'].filter(Boolean).join(' ')}
-          onClick={() => onChange(c.id)}
-        >
-          {c.name}
-        </button>
-      ))}
+      {categories.map((c) => {
+        const active = value === c.id;
+        return (
+          <button
+            key={c.id}
+            type="button"
+            className={['chip', active && 'active'].filter(Boolean).join(' ')}
+            style={active ? { background: c.color, borderColor: c.color } : undefined}
+            onClick={() => onChange(c.id)}
+          >
+            <span
+              className="chip-dot"
+              style={{ background: active ? '#fff' : c.color }}
+              aria-hidden
+            />
+            {c.name}
+          </button>
+        );
+      })}
       {onCreate && (
         <button type="button" className="chip chip-new" onClick={onCreate}>
           + New

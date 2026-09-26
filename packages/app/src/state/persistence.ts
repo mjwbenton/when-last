@@ -1,5 +1,6 @@
 import type { AppState } from './types';
 import { generateBackupKey } from './id';
+import { DEFAULT_CATEGORY_COLOR } from './categoryColors';
 
 export const STATE_KEY = 'whenlast.state.v1';
 
@@ -22,7 +23,9 @@ export function loadState(): AppState {
       return {
         ...emptyState(),
         ...parsed,
-        categories: Array.isArray(parsed.categories) ? parsed.categories : [],
+        categories: Array.isArray(parsed.categories)
+          ? parsed.categories.map((c) => ({ ...c, color: c.color ?? DEFAULT_CATEGORY_COLOR }))
+          : [],
         actions: Array.isArray(parsed.actions)
           ? parsed.actions.map((a) => ({ ...a, categoryId: a.categoryId ?? null }))
           : [],

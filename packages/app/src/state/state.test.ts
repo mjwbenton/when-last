@@ -13,6 +13,10 @@ import {
   lastLoggedAt,
   sortedActions,
   groupedActions,
+  CATEGORY_COLORS,
+  DEFAULT_CATEGORY_COLOR,
+  colorForCategory,
+  nextCategoryColor,
 } from './index';
 import {
   addAction,
@@ -20,6 +24,7 @@ import {
   renameCategory,
   removeCategory,
   setActionCategory,
+  setCategoryColor,
   logNow,
   logAt,
   removeLog,
@@ -84,6 +89,19 @@ describe('persistence round-trip', () => {
     const loaded = loadState();
     expect(loaded.categories).toEqual([]);
     expect(loaded.actions[0]?.categoryId).toBeNull();
+  });
+
+  it('defaults a missing category colour when loading', () => {
+    localStorage.setItem(
+      STATE_KEY,
+      JSON.stringify({
+        actions: [],
+        categories: [{ id: 'cat-1', name: 'Home' }],
+        backupKey: 'wl-aaaa-aaaa-aaaa',
+        lastBackupAt: null,
+      }),
+    );
+    expect(loadState().categories[0]?.color).toBe(DEFAULT_CATEGORY_COLOR);
   });
 });
 
@@ -173,7 +191,7 @@ describe('restoreFromSnapshot preserves local backup key', () => {
       ...fresh(),
       backupKey: 'wl-aaaa-aaaa-aaaa',
       actions: [{ id: 'x', name: 'Watered plants', logs: [1], categoryId: null }],
-      categories: [{ id: 'cat-1', name: 'Home' }],
+      categories: [{ id: 'cat-1', name: 'Home', color: '#2f7d6b' }],
     };
     const restored = restoreFromSnapshot(local, snapshot);
     expect(restored.backupKey).toBe(local.backupKey);
@@ -307,6 +325,34 @@ describe('categories', () => {
     expect(s.categories[0]?.name).toBe('Household');
   });
 
+  it('addCategory assigns a colour from the palette', () => {
+    const s = addCategory(fresh(), { name: 'Home' });
+    expect(s.categories[0]?.color).toBe(DEFAULT_CATEGORY_COLOR);
+  });
+
+  it('addCategory auto-picks unused palette colours', () => {
+    let s = addCategory(fresh(), { name: 'One' });
+    s = addCategory(s, { name: 'Two' });
+    expect(s.categories.map((c) => c.color)).toEqual([
+      CATEGORY_COLORS[0]!.value,
+      CATEGORY_COLORS[1]!.value,
+    ]);
+  });
+
+  it('addCategory honours a supplied colour', () => {
+    const s = addCategory(fresh(), { name: 'Home', color: '#123456' });
+    expect(s.categories[0]?.color).toBe('#123456');
+  });
+
+  it('setCategoryColor recolours a single category', () => {
+    let s = addCategory(fresh(), { name: 'Home' });
+    s = addCategory(s, { name: 'Car' });
+    const id = s.categories[0]!.id;
+    s = setCategoryColor(s, id, '#abcdef');
+    expect(s.categories[0]?.color).toBe('#abcdef');
+    expect(s.categories[1]?.color).toBe(CATEGORY_COLORS[1]!.value);
+  });
+
   it('removeCategory uncategorizes its actions without deleting them', () => {
     let s = addCategory(fresh(), { name: 'Home' });
     const catId = s.categories[0]!.id;
@@ -346,5 +392,20 @@ describe('categories', () => {
   it('groupedActions drops empty categories', () => {
     const s = addCategory(fresh(), { name: 'Empty' });
     expect(groupedActions(s)).toEqual([]);
+  });
+
+  it('colorForCategory resolves a category colour, or null when uncategorized', () => {
+    const s = addCategory(fresh(), { name: 'Home' });
+    const id = s.categories[0]!.id;
+    expect(colorForCategory(s.categories, id)).toBe(DEFAULT_CATEGORY_COLOR);
+    expect(colorForCategory(s.categories, null)).toBeNull();
+    expect(colorForCategory(s.categories, 'missing')).toBeNull();
+  });
+
+  it('nextCategoryColor picks the first unused colour and cycles when exhausted', () => {
+    expect(nextCategoryColor([])).toBe(CATEGORY_COLORS[0]!.value);
+    expect(nextCategoryColor([CATEGORY_COLORS[0]!.value])).toBe(CATEGORY_COLORS[1]!.value);
+    const all = CATEGORY_COLORS.map((c) => c.value);
+    expect(nextCategoryColor(all)).toBe(CATEGORY_COLORS[0]!.value);
   });
 });

@@ -112,12 +112,22 @@ body {
 
 .group-head {
   grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--ink-3);
   margin: 10px 0 -2px;
+}
+
+.group-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .group-head:first-child {
@@ -529,6 +539,9 @@ body {
 
 .chip {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font: inherit;
   font-size: 13px;
   font-weight: 500;
@@ -542,6 +555,13 @@ body {
     border-color 120ms ease,
     background 120ms ease,
     color 120ms ease;
+}
+
+.chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .chip:hover {
@@ -610,12 +630,36 @@ body {
   overflow: hidden;
 }
 
+.cat-item {
+  background: var(--surface);
+}
+
 .cat-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   background: var(--surface);
-  padding: 6px 8px 6px 4px;
+  padding: 6px 8px 6px 8px;
+}
+
+.cat-dot {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--line-2);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.cat-dot:hover {
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.cat-colors {
+  padding: 0 8px 10px 8px;
 }
 
 .cat-name {
@@ -665,6 +709,43 @@ body {
   color: var(--muted);
   text-align: center;
   margin: 14px 0 0;
+}
+
+/* ================= Colour picker ================= */
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cat-add + .swatches {
+  margin-top: 12px;
+}
+
+.cat-inline + .swatches {
+  margin-top: 10px;
+}
+
+.swatch {
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--line-2);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 120ms ease;
+}
+
+.swatch:hover {
+  transform: scale(1.08);
+}
+
+.swatch.active {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--ink-2);
 }
 
 /* ================= Buttons ================= */

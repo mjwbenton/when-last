@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useAppState, uid } from '../state';
+import { useAppState, uid, DEFAULT_CATEGORY_COLOR, nextCategoryColor } from '../state';
 import { useToast, Sheet, Field } from '../ui';
 import { useNav } from '../nav/context';
 import { CategoryPicker } from '../components/CategoryPicker';
+import { ColorPicker } from '../components/ColorPicker';
 
 export function AddActionSheet() {
   const { state, mutators } = useAppState();
@@ -13,6 +14,7 @@ export function AddActionSheet() {
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [newCategory, setNewCategory] = useState('');
+  const [newColor, setNewColor] = useState(DEFAULT_CATEGORY_COLOR);
 
   const valid = name.trim().length > 0;
 
@@ -34,7 +36,7 @@ export function AddActionSheet() {
     // Pre-generate the id so the new category is selected immediately, before
     // the state update round-trips.
     const id = uid('cat');
-    mutators.addCategory({ name: trimmed, id });
+    mutators.addCategory({ name: trimmed, id, color: newColor });
     setCategoryId(id);
     setNewCategory('');
     setCreating(false);
@@ -74,7 +76,10 @@ export function AddActionSheet() {
             setCategoryId(id);
             setCreating(false);
           }}
-          onCreate={() => setCreating(true)}
+          onCreate={() => {
+            setNewColor(nextCategoryColor(state.categories.map((c) => c.color)));
+            setCreating(true);
+          }}
         />
         {creating && (
           <div className="cat-inline">
@@ -100,6 +105,7 @@ export function AddActionSheet() {
             </button>
           </div>
         )}
+        {creating && <ColorPicker value={newColor} onChange={setNewColor} />}
       </div>
     </Sheet>
   );

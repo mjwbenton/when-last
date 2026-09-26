@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useAppState } from '../state';
+import { useAppState, DEFAULT_CATEGORY_COLOR, nextCategoryColor } from '../state';
 import { useToast, Sheet, IconButton, Input } from '../ui';
 import { useNav } from '../nav/context';
+import { ColorPicker } from '../components/ColorPicker';
 
 export function CategoriesSheet() {
   const { state, mutators } = useAppState();
@@ -9,8 +10,10 @@ export function CategoriesSheet() {
   const toast = useToast();
 
   const [newName, setNewName] = useState('');
+  const [newColor, setNewColor] = useState(DEFAULT_CATEGORY_COLOR);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  const [colorEditId, setColorEditId] = useState<string | null>(null);
 
   const add = () => {
     const name = newName.trim();
@@ -19,9 +22,10 @@ export function CategoriesSheet() {
       toast('That category already exists');
       return;
     }
-    mutators.addCategory({ name });
+    mutators.addCategory({ name, color: newColor });
     toast(`Added ${name}`);
     setNewName('');
+    setNewColor(nextCategoryColor([...state.categories.map((c) => c.color), newColor]));
   };
 
   const startEdit = (id: string, name: string) => {
@@ -76,43 +80,69 @@ export function CategoriesSheet() {
           Add
         </button>
       </div>
+      <ColorPicker value={newColor} onChange={setNewColor} />
 
       {state.categories.length === 0 ? (
         <div className="history-empty">No categories yet.</div>
       ) : (
         <div className="cat-list">
           {state.categories.map((c) => (
-            <div className="cat-row" key={c.id}>
-              {editingId === c.id ? (
-                <input
-                  className="input cat-edit"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onBlur={commitEdit}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') commitEdit();
-                    if (e.key === 'Escape') setEditingId(null);
-                  }}
-                  aria-label={`Rename ${c.name}`}
-                  autoFocus
+            <div className="cat-item" key={c.id}>
+              <div className="cat-row">
+                <button
+                  type="button"
+                  className="cat-dot"
+                  style={{ background: c.color }}
+                  aria-label={`Colour for ${c.name}`}
+                  aria-expanded={colorEditId === c.id}
+                  onClick={() => setColorEditId(colorEditId === c.id ? null : c.id)}
                 />
-              ) : (
-                <button type="button" className="cat-name" onClick={() => startEdit(c.id, c.name)}>
-                  <span className="cat-name-text">{c.name}</span>
-                  <span className="cat-count">{countFor(c.id)}</span>
-                </button>
+                {editingId === c.id ? (
+                  <input
+                    className="input cat-edit"
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onBlur={commitEdit}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') commitEdit();
+                      if (e.key === 'Escape') setEditingId(null);
+                    }}
+                    aria-label={`Rename ${c.name}`}
+                    autoFocus
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    className="cat-name"
+                    onClick={() => startEdit(c.id, c.name)}
+                  >
+                    <span className="cat-name-text">{c.name}</span>
+                    <span className="cat-count">{countFor(c.id)}</span>
+                  </button>
+                )}
+                <IconButton
+                  name="trash"
+                  label={`Delete ${c.name}`}
+                  onClick={() => remove(c.id, c.name)}
+                />
+              </div>
+              {colorEditId === c.id && (
+                <div className="cat-colors">
+                  <ColorPicker
+                    value={c.color}
+                    onChange={(color) => {
+                      mutators.setCategoryColor(c.id, color);
+                      setColorEditId(null);
+                    }}
+                  />
+                </div>
               )}
-              <IconButton
-                name="trash"
-                label={`Delete ${c.name}`}
-                onClick={() => remove(c.id, c.name)}
-              />
             </div>
           ))}
         </div>
       )}
 
-      <p className="cat-hint">Tap a category name to rename it.</p>
+      <p className="cat-hint">Tap a name to rename it, or a swatch to recolour it.</p>
     </Sheet>
   );
 }

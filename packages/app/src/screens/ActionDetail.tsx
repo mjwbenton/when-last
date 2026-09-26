@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useAppState, toLocalInputValue } from '../state';
+import type { CSSProperties } from 'react';
+import { useAppState, toLocalInputValue, colorForCategory } from '../state';
 import { useNav } from '../nav/context';
 import { HistoryRow } from '../components/HistoryRow';
 import { CategoryPicker } from '../components/CategoryPicker';
@@ -22,6 +23,7 @@ export function ActionDetail({ actionId }: Props) {
   if (!action) return null;
 
   const logs = [...action.logs].sort((a, b) => b - a);
+  const accent = colorForCategory(state.categories, action.categoryId);
 
   const logNow = () => {
     mutators.logNow(action.id);
@@ -45,7 +47,10 @@ export function ActionDetail({ actionId }: Props) {
   };
 
   return (
-    <div className="page detail">
+    <div
+      className="page detail"
+      style={accent ? ({ '--accent': accent } as CSSProperties) : undefined}
+    >
       <div className="detail-top">
         <button
           type="button"

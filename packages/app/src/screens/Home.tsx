@@ -1,5 +1,11 @@
 import { Fragment } from 'react';
-import { useAppState, groupedActions, lastLoggedAt, relativeTime } from '../state';
+import {
+  useAppState,
+  groupedActions,
+  lastLoggedAt,
+  relativeTime,
+  colorForCategory,
+} from '../state';
 import { useNav } from '../nav/context';
 import { StaleBackupBanner } from '../components/StaleBackupBanner';
 import { BackupFooter } from '../components/BackupFooter';
@@ -30,10 +36,20 @@ export function Home() {
           {groups.map((group) => (
             <Fragment key={group.category?.id ?? 'uncategorized'}>
               {showHeaders && (
-                <div className="group-head">{group.category?.name ?? 'Uncategorized'}</div>
+                <div className="group-head">
+                  {group.category && (
+                    <span
+                      className="group-dot"
+                      style={{ background: group.category.color }}
+                      aria-hidden
+                    />
+                  )}
+                  {group.category?.name ?? 'Uncategorized'}
+                </div>
               )}
               {group.actions.map((a) => {
                 const last = lastLoggedAt(a);
+                const color = colorForCategory(state.categories, a.categoryId);
                 return (
                   <button
                     key={a.id}
@@ -44,6 +60,7 @@ export function Home() {
                     <div className="tile-name">{a.name}</div>
                     <div
                       className={['tile-last', last === null && 'never'].filter(Boolean).join(' ')}
+                      style={color ? { color } : undefined}
                     >
                       {last === null ? 'Never logged' : relativeTime(last)}
                     </div>

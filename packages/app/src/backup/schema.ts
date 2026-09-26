@@ -1,9 +1,10 @@
 import { z } from 'zod';
-import { BACKUP_KEY_PATTERN } from '../state';
+import { BACKUP_KEY_PATTERN, DEFAULT_CATEGORY_COLOR } from '../state';
 
 const category = z.object({
   id: z.string(),
   name: z.string(),
+  color: z.string().default(DEFAULT_CATEGORY_COLOR),
 });
 
 const action = z.object({

@@ -18,6 +18,7 @@ type Mutators = {
   addCategory: (args: Parameters<typeof M.addCategory>[1]) => void;
   renameCategory: (categoryId: string, name: string) => void;
   removeCategory: (categoryId: string) => void;
+  setCategoryColor: (categoryId: string, color: string) => void;
   logNow: (actionId: string) => void;
   logAt: (actionId: string, timestamp: number) => void;
   removeLog: (actionId: string, timestamp: number) => void;
@@ -53,6 +54,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       renameCategory: (categoryId, name) =>
         setState((prev) => M.renameCategory(prev, categoryId, name)),
       removeCategory: (categoryId) => setState((prev) => M.removeCategory(prev, categoryId)),
+      setCategoryColor: (categoryId, color) =>
+        setState((prev) => M.setCategoryColor(prev, categoryId, color)),
       logNow: (actionId) => setState((prev) => M.logNow(prev, actionId)),
       logAt: (actionId, timestamp) => setState((prev) => M.logAt(prev, actionId, timestamp)),
       removeLog: (actionId, timestamp) =>

@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 
 export type Screen = { name: 'home' } | { name: 'action'; actionId: string };
 
-export type SheetState = { kind: 'add-action' } | { kind: 'backup' } | { kind: 'restore' };
+export type SheetState =
+  { kind: 'add-action' } | { kind: 'categories' } | { kind: 'backup' } | { kind: 'restore' };
 
 type Nav = {
   screen: Screen;

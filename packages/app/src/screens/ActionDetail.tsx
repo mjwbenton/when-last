@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAppState, toLocalInputValue } from '../state';
 import { useNav } from '../nav/context';
 import { HistoryRow } from '../components/HistoryRow';
+import { CategoryPicker } from '../components/CategoryPicker';
 
 type Props = { actionId: string };
 
@@ -78,6 +79,15 @@ export function ActionDetail({ actionId }: Props) {
       <button type="button" className="custom-time-toggle" onClick={toggleCustom}>
         {showCustom ? 'Cancel custom time' : 'Log a different time…'}
       </button>
+
+      <div className="field">
+        <div className="field-label">Category</div>
+        <CategoryPicker
+          categories={state.categories}
+          value={action.categoryId}
+          onChange={(id) => mutators.setActionCategory(action.id, id)}
+        />
+      </div>
 
       <div className="history-label">History</div>
 

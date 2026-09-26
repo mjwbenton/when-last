@@ -14,6 +14,10 @@ import * as M from './mutators';
 
 type Mutators = {
   addAction: (args: Parameters<typeof M.addAction>[1]) => void;
+  setActionCategory: (actionId: string, categoryId: string | null) => void;
+  addCategory: (args: Parameters<typeof M.addCategory>[1]) => void;
+  renameCategory: (categoryId: string, name: string) => void;
+  removeCategory: (categoryId: string) => void;
   logNow: (actionId: string) => void;
   logAt: (actionId: string, timestamp: number) => void;
   removeLog: (actionId: string, timestamp: number) => void;
@@ -43,6 +47,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const mutators = useMemo<Mutators>(
     () => ({
       addAction: apply(M.addAction),
+      setActionCategory: (actionId, categoryId) =>
+        setState((prev) => M.setActionCategory(prev, actionId, categoryId)),
+      addCategory: apply(M.addCategory),
+      renameCategory: (categoryId, name) =>
+        setState((prev) => M.renameCategory(prev, categoryId, name)),
+      removeCategory: (categoryId) => setState((prev) => M.removeCategory(prev, categoryId)),
       logNow: (actionId) => setState((prev) => M.logNow(prev, actionId)),
       logAt: (actionId, timestamp) => setState((prev) => M.logAt(prev, actionId, timestamp)),
       removeLog: (actionId, timestamp) =>

@@ -1,13 +1,62 @@
-import type { AppState, TrackedAction } from './types';
+import type { AppState, Category, TrackedAction } from './types';
 import { uid } from './id';
 
-export function addAction(state: AppState, args: { name: string }): AppState {
+export function addAction(
+  state: AppState,
+  args: { name: string; categoryId?: string | null },
+): AppState {
   const action: TrackedAction = {
     id: uid('action'),
     name: args.name.trim(),
     logs: [],
+    categoryId: args.categoryId ?? null,
   };
   return { ...state, actions: [...state.actions, action] };
+}
+
+export function setActionCategory(
+  state: AppState,
+  actionId: string,
+  categoryId: string | null,
+): AppState {
+  return {
+    ...state,
+    actions: state.actions.map((a) => (a.id === actionId ? { ...a, categoryId } : a)),
+  };
+}
+
+export function addCategory(state: AppState, args: { name: string; id?: string }): AppState {
+  const name = args.name.trim();
+  if (!name) return state;
+  if (state.categories.some((c) => c.name.toLowerCase() === name.toLowerCase())) return state;
+  const category: Category = { id: args.id ?? uid('cat'), name };
+  return { ...state, categories: [...state.categories, category] };
+}
+
+export function renameCategory(state: AppState, categoryId: string, name: string): AppState {
+  const trimmed = name.trim();
+  if (!trimmed) return state;
+  if (
+    state.categories.some(
+      (c) => c.id !== categoryId && c.name.toLowerCase() === trimmed.toLowerCase(),
+    )
+  ) {
+    return state;
+  }
+  return {
+    ...state,
+    categories: state.categories.map((c) => (c.id === categoryId ? { ...c, name: trimmed } : c)),
+  };
+}
+
+export function removeCategory(state: AppState, categoryId: string): AppState {
+  return {
+    ...state,
+    categories: state.categories.filter((c) => c.id !== categoryId),
+    actions: state.actions.map((a) =>
+      a.categoryId === categoryId ? { ...a, categoryId: null } : a,
+    ),
+  };
 }
 
 export function logNow(state: AppState, actionId: string): AppState {

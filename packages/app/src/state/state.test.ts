@@ -12,8 +12,20 @@ import {
   exactTime,
   lastLoggedAt,
   sortedActions,
+  groupedActions,
 } from './index';
-import { addAction, logNow, logAt, removeLog, markBackedUp, restoreFromSnapshot } from './mutators';
+import {
+  addAction,
+  addCategory,
+  renameCategory,
+  removeCategory,
+  setActionCategory,
+  logNow,
+  logAt,
+  removeLog,
+  markBackedUp,
+  restoreFromSnapshot,
+} from './mutators';
 import type { AppState } from './types';
 
 function fresh(): AppState {
@@ -58,6 +70,20 @@ describe('persistence round-trip', () => {
   it('starts with no seeded actions', () => {
     const loaded = loadState();
     expect(loaded.actions).toEqual([]);
+  });
+
+  it('migrates pre-category state by defaulting categories and categoryId', () => {
+    localStorage.setItem(
+      STATE_KEY,
+      JSON.stringify({
+        actions: [{ id: 'a', name: 'Watered plants', logs: [1] }],
+        backupKey: 'wl-aaaa-aaaa-aaaa',
+        lastBackupAt: null,
+      }),
+    );
+    const loaded = loadState();
+    expect(loaded.categories).toEqual([]);
+    expect(loaded.actions[0]?.categoryId).toBeNull();
   });
 });
 
@@ -146,7 +172,8 @@ describe('restoreFromSnapshot preserves local backup key', () => {
     const snapshot: AppState = {
       ...fresh(),
       backupKey: 'wl-aaaa-aaaa-aaaa',
-      actions: [{ id: 'x', name: 'Watered plants', logs: [1] }],
+      actions: [{ id: 'x', name: 'Watered plants', logs: [1], categoryId: null }],
+      categories: [{ id: 'cat-1', name: 'Home' }],
     };
     const restored = restoreFromSnapshot(local, snapshot);
     expect(restored.backupKey).toBe(local.backupKey);
@@ -226,20 +253,98 @@ describe('exactTime formatting', () => {
 
 describe('lastLoggedAt / sortedActions', () => {
   it('lastLoggedAt returns max or null', () => {
-    expect(lastLoggedAt({ id: 'a', name: 'A', logs: [] })).toBeNull();
-    expect(lastLoggedAt({ id: 'a', name: 'A', logs: [1, 9, 4] })).toBe(9);
+    expect(lastLoggedAt({ id: 'a', name: 'A', logs: [], categoryId: null })).toBeNull();
+    expect(lastLoggedAt({ id: 'a', name: 'A', logs: [1, 9, 4], categoryId: null })).toBe(9);
   });
 
   it('sorts most-recently-logged first, never-logged last', () => {
     const s: AppState = {
       ...emptyState(),
       actions: [
-        { id: 'old', name: 'Old', logs: [100] },
-        { id: 'never', name: 'Never', logs: [] },
-        { id: 'recent', name: 'Recent', logs: [500] },
+        { id: 'old', name: 'Old', logs: [100], categoryId: null },
+        { id: 'never', name: 'Never', logs: [], categoryId: null },
+        { id: 'recent', name: 'Recent', logs: [500], categoryId: null },
       ],
     };
     const order = sortedActions(s).map((a) => a.id);
     expect(order).toEqual(['recent', 'old', 'never']);
+  });
+});
+
+describe('categories', () => {
+  it('addAction stores the given category', () => {
+    let s = addCategory(fresh(), { name: 'Home' });
+    const catId = s.categories[0]!.id;
+    s = addAction(s, { name: 'Watered plants', categoryId: catId });
+    expect(s.actions[0]?.categoryId).toBe(catId);
+  });
+
+  it('addAction defaults to uncategorized', () => {
+    const s = addAction(fresh(), { name: 'Watered plants' });
+    expect(s.actions[0]?.categoryId).toBeNull();
+  });
+
+  it('addCategory trims names and ignores empties/duplicates', () => {
+    let s = addCategory(fresh(), { name: '  Home  ' });
+    expect(s.categories.map((c) => c.name)).toEqual(['Home']);
+    s = addCategory(s, { name: 'home' });
+    s = addCategory(s, { name: '   ' });
+    expect(s.categories).toHaveLength(1);
+  });
+
+  it('addCategory honours a supplied id', () => {
+    const s = addCategory(fresh(), { name: 'Home', id: 'cat-fixed' });
+    expect(s.categories[0]?.id).toBe('cat-fixed');
+  });
+
+  it('renameCategory renames and rejects duplicates', () => {
+    let s = addCategory(fresh(), { name: 'Home' });
+    s = addCategory(s, { name: 'Car' });
+    const home = s.categories[0]!.id;
+    s = renameCategory(s, home, 'Household');
+    expect(s.categories[0]?.name).toBe('Household');
+    s = renameCategory(s, home, 'car');
+    expect(s.categories[0]?.name).toBe('Household');
+  });
+
+  it('removeCategory uncategorizes its actions without deleting them', () => {
+    let s = addCategory(fresh(), { name: 'Home' });
+    const catId = s.categories[0]!.id;
+    s = addAction(s, { name: 'Watered plants', categoryId: catId });
+    s = removeCategory(s, catId);
+    expect(s.categories).toHaveLength(0);
+    expect(s.actions).toHaveLength(1);
+    expect(s.actions[0]?.categoryId).toBeNull();
+  });
+
+  it('setActionCategory moves an action and can clear it', () => {
+    let s = addCategory(fresh(), { name: 'Home' });
+    const catId = s.categories[0]!.id;
+    s = addAction(s, { name: 'Watered plants' });
+    const actionId = s.actions[0]!.id;
+    s = setActionCategory(s, actionId, catId);
+    expect(s.actions[0]?.categoryId).toBe(catId);
+    s = setActionCategory(s, actionId, null);
+    expect(s.actions[0]?.categoryId).toBeNull();
+  });
+
+  it('groupedActions orders categories, sorts within, and puts uncategorized last', () => {
+    let s = addCategory(fresh(), { name: 'Home' });
+    s = addCategory(s, { name: 'Car' });
+    const home = s.categories[0]!.id;
+    const car = s.categories[1]!.id;
+    s = addAction(s, { name: 'Watered plants', categoryId: home });
+    s = addAction(s, { name: 'Oil change', categoryId: car });
+    s = addAction(s, { name: 'Dust shelves' });
+
+    const groups = groupedActions(s);
+    expect(groups.map((g) => g.category?.name ?? null)).toEqual(['Home', 'Car', null]);
+    expect(groups[0]?.actions.map((a) => a.name)).toEqual(['Watered plants']);
+    expect(groups[2]?.actions.map((a) => a.name)).toEqual(['Dust shelves']);
+  });
+
+  it('groupedActions drops empty categories', () => {
+    const s = addCategory(fresh(), { name: 'Empty' });
+    expect(groupedActions(s)).toEqual([]);
   });
 });

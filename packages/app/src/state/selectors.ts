@@ -1,4 +1,4 @@
-import type { AppState, TrackedAction } from './types';
+import type { AppState, Category, TrackedAction } from './types';
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 export const BACKUP_STALE_DAYS = 15;
@@ -49,6 +49,27 @@ export function sortedActions(state: AppState): TrackedAction[] {
     const lb = lastLoggedAt(b) ?? -1;
     return lb - la;
   });
+}
+
+export type ActionGroup = { category: Category | null; actions: TrackedAction[] };
+
+// Actions grouped by category, each group sorted most-recently-logged first.
+// Categories keep their creation order; uncategorized actions come last. Empty
+// groups are omitted so the home grid stays dense.
+export function groupedActions(state: AppState): ActionGroup[] {
+  const sorted = sortedActions(state);
+  const known = new Set(state.categories.map((c) => c.id));
+
+  const groups: ActionGroup[] = [];
+  for (const category of state.categories) {
+    const actions = sorted.filter((a) => a.categoryId === category.id);
+    if (actions.length) groups.push({ category, actions });
+  }
+
+  const uncategorized = sorted.filter((a) => a.categoryId === null || !known.has(a.categoryId));
+  if (uncategorized.length) groups.push({ category: null, actions: uncategorized });
+
+  return groups;
 }
 
 // ── Backup-feature helpers (coarser day/hour/min formatting) ─────────────────
